@@ -44,6 +44,11 @@ def login_page():
         # Set the initial disabled state of the button
         enable_button_on_user_inputs([email, password], login_button)
 
+        # Add link to register page
+        with ui.row().classes("w-full justify-center mt-4"):
+            ui.label("Don't have an account?")
+            ui.html('<a href="/register" style="color: #1976d2; text-decoration: none;">Register</a>', sanitize=False)
+
 
 async def perform_login(email_input: ui.input, password_input: ui.input):
     """Sends user credentials to the backend."""

@@ -1,7 +1,7 @@
 from nicegui import app, ui
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.backend.endpoints import login, users, items
+from src.backend.endpoints import login, users, items, video_scripts
 from src.core.config import settings
 from src.db import init_db
 
@@ -11,6 +11,10 @@ from src.frontend.pages import (
     create_user,
     items as items_page,
     login as login_page,
+    register as register_page,
+    profile as profile_page,
+    video_scripts as video_scripts_page,
+    video_production as video_production_page,
 )
 
 
@@ -43,6 +47,7 @@ app.add_middleware(
 app.include_router(login.router, tags=["login"])
 app.include_router(users.router, prefix="/api/v1", tags=["users"])
 app.include_router(items.router, prefix="/api/v1", tags=["items"])
+app.include_router(video_scripts.router, prefix="/api/v1", tags=["video-scripts"])
 
 if __name__ in {"__main__", "__mp_main__"}:
     ui.run(

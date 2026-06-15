@@ -1,8 +1,8 @@
 -- Create schema
-CREATE SCHEMA IF NOT EXISTS demo;
+CREATE SCHEMA IF NOT EXISTS moneyprinter;
 
 -- Grant privileges on schema to the application user
-GRANT ALL ON SCHEMA demo TO postgres;
+GRANT ALL ON SCHEMA moneyprinter TO postgres;
 
 -- Set search_path at the DB level
-ALTER DATABASE dashboard SET search_path TO demo, public;
+ALTER DATABASE moneyprinter SET search_path TO moneyprinter, public;

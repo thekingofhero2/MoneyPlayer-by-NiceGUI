@@ -41,6 +41,36 @@ def dashboard_frame(title: str):
                     with ui.item_section():
                         ui.label("Items").classes("text-gray-700 text-bold text-xl")
 
+                with (
+                    ui.item(on_click=lambda: ui.navigate.to("/video-scripts"))
+                    .props("clickable")
+                    .classes("w-full")
+                ):
+                    with ui.item_section().props("avatar"):
+                        ui.icon("video_library", color="gray-500")
+                    with ui.item_section():
+                        ui.label("视频文案").classes("text-gray-700 text-bold text-xl")
+
+                with (
+                    ui.item(on_click=lambda: ui.navigate.to("/video-production"))
+                    .props("clickable")
+                    .classes("w-full")
+                ):
+                    with ui.item_section().props("avatar"):
+                        ui.icon("movie", color="gray-500")
+                    with ui.item_section():
+                        ui.label("视频制作").classes("text-gray-700 text-bold text-xl")
+
+                with (
+                    ui.item(on_click=lambda: ui.navigate.to("/profile"))
+                    .props("clickable")
+                    .classes("w-full")
+                ):
+                    with ui.item_section().props("avatar"):
+                        ui.icon("person", color="gray-500")
+                    with ui.item_section():
+                        ui.label("个人中心").classes("text-gray-700 text-bold text-xl")
+
                 if app.storage.user.get("is_superuser"):
                     with (
                         ui.item(on_click=lambda: ui.navigate.to("/users/create"))
