@@ -9,8 +9,8 @@ except ImportError:
     WhisperModel = None
 from loguru import logger
 
-from config import config
-from utils import utils
+from src.app_videomaker.config import config
+from src.app_videomaker.utils import utils
 
 model_size = config.whisper.get("model_size", "large-v3")
 device = config.whisper.get("device", "cpu")

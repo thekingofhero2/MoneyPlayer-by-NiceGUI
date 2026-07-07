@@ -1,6 +1,7 @@
 import asyncio
 import json
 import httpx
+from contextlib import asynccontextmanager
 from nicegui import ui, app
 import re
 from src.frontend.layouts.default import dashboard_frame
@@ -11,6 +12,37 @@ from src.repositories.video_script import video_script_repo
 from src.repositories.user_llm_config import user_llm_config_repo
 from src.services.llm_service import get_llm_service_for_current_user
 from src.utils.tools import filter_think_tags
+
+
+# ============== 通用工具函数 ==============
+
+def parse_keywords(text: str) -> list[str]:
+    """解析关键词文本，返回关键词列表"""
+    keywords = re.split(r"[,，\n]", text)
+    keywords = [kw.strip() for kw in keywords if kw.strip()]
+    return keywords[:10]
+
+
+@asynccontextmanager
+async def button_loading(btn):
+    """按钮 loading 状态的上下文管理器"""
+    btn.disable()
+    btn.icon = "none"
+    btn._props['spinner'] = True
+    btn.update()
+    try:
+        yield
+    finally:
+        btn.enable()
+        btn.icon = "auto_awesome"
+        btn._props.pop('spinner', None)
+        btn.update()
+
+
+def get_current_user():
+    """获取当前用户"""
+    with get_db_context() as db:
+        return get_current_user_from_state(db)
 
 
 
@@ -210,7 +242,7 @@ def render_config_section():
                     api_base_input.value = config.api_base
                     api_key_input.value = config.api_key
                     model_input.value = config.model
-        except Exception as e:
+        except Exception:
             pass  # 如果加载失败，使用默认值
 
     # 页面加载时自动加载配置
@@ -418,71 +450,49 @@ def render_generation_section(load_history_scripts_callback):
         generate_btn.disable()
 
         try:
-            with get_db_context() as db:
-                current_user = get_current_user_from_state(db)
-
+            
             # 生成文案
             content = ""
             async for chunk in llm_service.generate_script(
-                theme=theme_input.value, mode=mode_select.value
+                theme=theme_input.value, mode=mode_select.value,
             ):
                 content += chunk
                 # 实时更新编辑器显示
                 content_editor.value = content + "▌"
-                await asyncio.sleep(0.05)  # 控制刷新频率
+                await asyncio.sleep(0.05)
             
-            # 过滤掉think标签
             content = filter_think_tags(content)
-            
             content_editor.value = content
 
             # 显示关键词卡片
             keyword_card.visible = True
             
-            # 抽取并显示关键词
+            # 抽取关键词
             try:
-                keywords_text = await llm_service.extract_keywords(content)
-                #过滤关键词中的think标签
-                keywords_text = filter_think_tags(keywords_text) 
-                #print(keywords_text)  
-                # 解析关键词，支持多种分隔符
-                keywords = re.split(r"[,，\n]", keywords_text)
-                keywords = [kw.strip() for kw in keywords if kw.strip()]
-                keywords = keywords[:10]  # 最多返回 10 个关键词
-                
-                keywords_input.value = ", ".join(keywords)
-            except Exception as e:
+                keywords_text = filter_think_tags(
+                    await llm_service.extract_keywords(content)
+                )
+                keywords_input.value = ", ".join(parse_keywords(keywords_text))
+            except Exception:
                 keywords_input.value = ""
+            
             # 保存到数据库
-            # script = video_script_repo.create(
-            #     db=db,
-            #     obj_in=type(
-            #         "obj",
-            #         (object,),
-            #         {
-            #             "theme": theme_input.value,
-            #             "mode": mode_select.value,
-            #             "content": content,
-            #             "keywords": keywords_input.value,
-            #         },
-            #     )(),
-            #     current_user_id=current_user.id,
-            # )
             from src.models import VideoScriptCreate
-            script = video_script_repo.create(
-                db=db,
-                obj_in=VideoScriptCreate(
-                    theme=theme_input.value,
-                    mode=mode_select.value,
-                    content=content,
-                    keywords=keywords_input.value,
-                ),
-                current_user_id=current_user.id,
-            )
+            with get_db_context() as db:
+                current_user = get_current_user_from_state(db)
+                video_script_repo.create(
+                    db=db,
+                    obj_in=VideoScriptCreate(
+                        theme=theme_input.value,
+                        mode=mode_select.value,
+                        content=content,
+                        keywords=keywords_input.value,
+                    ),
+                    current_user_id=current_user.id,
+                )
+            
             notifications.show_success("文案生成成功！")
             save_btn.visible = True
-
-            # 刷新历史记录
             await load_history_scripts_callback()
 
         except Exception as e:
@@ -501,31 +511,16 @@ def render_generation_section(load_history_scripts_callback):
             notifications.show_error("请先生成文案内容")
             return
 
-        # 获取当前用户的 LLM 服务
         llm_service = get_llm_service_for_current_user()
-
         try:
-            extract_btn.disable()
-            extract_btn.icon = "none"
-            extract_btn._props['spinner'] = True
-            extract_btn.update()
-
-            keywords_text = await llm_service.extract_keywords(content_editor.value)
-            #过滤关键词中的think标签
-            keywords_text = filter_think_tags(keywords_text) 
-            # 解析关键词，支持多种分隔符
-            keywords = re.split(r"[,，\n]", keywords_text)
-            keywords = [kw.strip() for kw in keywords if kw.strip()]
-            keywords = keywords[:10]  # 最多返回 10 个关键词
-            keywords_input.value = ", ".join(keywords)
-            notifications.show_success("关键词抽取成功！")
+            async with button_loading(extract_btn):
+                keywords_text = filter_think_tags(
+                    await llm_service.extract_keywords(content_editor.value)
+                )
+                keywords_input.value = ", ".join(parse_keywords(keywords_text))
+                notifications.show_success("关键词抽取成功！")
         except Exception as e:
             notifications.show_error(f"抽取失败：{str(e)}")
-        finally:
-            extract_btn.enable()
-            extract_btn.icon = "auto_awesome"
-            extract_btn._props.pop('spinner', None)
-            extract_btn.update()
 
     extract_btn.on("click", handle_extract_keywords)
 
@@ -589,33 +584,16 @@ async def show_script_detail(script):
             with ui.row().classes("gap-2"):
                 async def extract_keywords_handler():
                     """抽取关键词"""
-                    # 获取当前用户的 LLM 服务
                     llm_service = get_llm_service_for_current_user()
-                    
                     try:
-                        extract_btn.disable()
-                        extract_btn.icon = "none"
-                        extract_btn._props['spinner'] = True
-                        extract_btn.update()
-                        
-                        keywords_text = await llm_service.extract_keywords(content_editor.value)
-                        #过滤关键词中的think标签
-                        keywords_text = filter_think_tags(keywords_text) 
-                        #print(keywords_text)  
-                        # 解析关键词，支持多种分隔符
-                        keywords = re.split(r"[,，\n]", keywords_text)
-                        keywords = [kw.strip() for kw in keywords if kw.strip()]
-                        keywords = keywords[:10]  # 最多返回 10 个关键词
-                        
-                        keywords_input.value = ", ".join(keywords)
-                        notifications.show_success("关键词抽取成功！")
+                        async with button_loading(extract_btn):
+                            keywords_text = filter_think_tags(
+                                await llm_service.extract_keywords(content_editor.value)
+                            )
+                            keywords_input.value = ", ".join(parse_keywords(keywords_text))
+                            notifications.show_success("关键词抽取成功！")
                     except Exception as e:
                         notifications.show_error(f"抽取失败：{str(e)}")
-                    finally:
-                        extract_btn.enable()
-                        extract_btn.icon = "auto_awesome"
-                        extract_btn._props.pop('spinner', None)
-                        extract_btn.update()
                 
                 extract_btn = ui.button("抽取关键词", icon="auto_awesome").props(
                     "color=primary flat size=sm"

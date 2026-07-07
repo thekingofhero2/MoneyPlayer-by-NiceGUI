@@ -1,7 +1,7 @@
 from fastapi import Request
 
-from controllers.v1.base import new_router
-from models.schema import (
+from src.app_videomaker.controllers.v1.base import new_router
+from src.app_videomaker.models.schema import (
     VideoScriptRequest,
     VideoScriptResponse,
     VideoSocialMetadataRequest,
@@ -9,8 +9,8 @@ from models.schema import (
     VideoTermsRequest,
     VideoTermsResponse,
 )
-from services import llm
-from utils import utils
+from src.app_videomaker.services import llm
+from src.app_videomaker.utils import utils
 
 # authentication dependency
 # router = new_router(dependencies=[Depends(base.verify_token)])

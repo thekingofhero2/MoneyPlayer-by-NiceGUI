@@ -3,7 +3,13 @@ from sqlmodel import Field, Relationship, SQLModel
 
 from src.core.config import settings
 
-TABLE_ARGS = {"schema": settings.SCHEMA_NAME}
+# 根据数据库类型设置 TABLE_ARGS，SQLite 不支持 schema
+if settings.DATABASE_URL.startswith("sqlite"):
+    TABLE_ARGS = {}
+    FK_PREFIX = ""
+else:
+    TABLE_ARGS = {"schema": settings.SCHEMA_NAME}
+    FK_PREFIX = f"{settings.SCHEMA_NAME}."
 
 
 class UserBase(SQLModel):
@@ -58,7 +64,7 @@ class Item(ItemBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
     owner_id: Optional[int] = Field(
-        default=None, foreign_key=f"{settings.SCHEMA_NAME}.user.id"
+        default=None, foreign_key=f"{FK_PREFIX}user.id"
     )
     owner: Optional["User"] = Relationship(
         back_populates="items", sa_relationship_kwargs={"foreign_keys": "Item.owner_id"}
@@ -95,7 +101,7 @@ class VideoScript(VideoScriptBase, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(
-        default=None, foreign_key=f"{settings.SCHEMA_NAME}.user.id"
+        default=None, foreign_key=f"{FK_PREFIX}user.id"
     )
     owner: Optional["User"] = Relationship(
         back_populates="video_scripts",
@@ -136,7 +142,7 @@ class UserLLMConfig(UserLLMConfigBase, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(
-        default=None, foreign_key=f"{settings.SCHEMA_NAME}.user.id", unique=True
+        default=None, foreign_key=f"{FK_PREFIX}user.id", unique=True
     )
     user: Optional["User"] = Relationship(
         back_populates="llm_config",
@@ -194,7 +200,7 @@ class UserVideoConfig(UserVideoConfigBase, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(
-        default=None, foreign_key=f"{settings.SCHEMA_NAME}.user.id", unique=True
+        default=None, foreign_key=f"{FK_PREFIX}user.id", unique=True
     )
     user: Optional["User"] = Relationship(
         back_populates="video_config",
@@ -244,7 +250,7 @@ class VideoTask(VideoTaskBase, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: Optional[int] = Field(
-        default=None, foreign_key=f"{settings.SCHEMA_NAME}.user.id"
+        default=None, foreign_key=f"{FK_PREFIX}user.id"
     )
     owner: Optional["User"] = Relationship(
         back_populates="video_tasks",

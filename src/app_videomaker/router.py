@@ -9,7 +9,7 @@ Resources:
 
 from fastapi import APIRouter
 
-from controllers.v1 import llm, video
+from src.app_videomaker.controllers.v1 import llm, video
 
 root_api_router = APIRouter()
 # v1

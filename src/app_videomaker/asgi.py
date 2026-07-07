@@ -9,10 +9,10 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
-from config import config
-from models.exception import HttpException
-from router import root_api_router
-from utils import utils
+from src.app_videomaker.config import config
+from src.app_videomaker.models.exception import HttpException
+from src.app_videomaker.router import root_api_router
+from src.app_videomaker.utils import utils
 
 
 def exception_handler(request: Request, e: HttpException):

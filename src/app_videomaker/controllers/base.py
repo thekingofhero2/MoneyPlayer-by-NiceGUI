@@ -2,8 +2,8 @@ from uuid import uuid4
 
 from fastapi import Request
 
-from config import config
-from models.exception import HttpException
+from src.app_videomaker.config import config
+from src.app_videomaker.models.exception import HttpException
 
 
 def get_task_id(request: Request):

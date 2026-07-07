@@ -6,11 +6,11 @@ from os import path
 from loguru import logger
 
 #from config import config
-from models import const
-from models.schema import VideoConcatMode, VideoParams
-from services import llm, material, subtitle, video, voice, upload_post
+from src.app_videomaker.models import const
+from src.app_videomaker.models.schema import VideoConcatMode, VideoParams
+from src.app_videomaker.services import llm, material, subtitle, video, voice, upload_post
 #from services import state as sm
-from utils import utils
+from src.app_videomaker.utils import utils
 
 
 def generate_script(task_id, params):

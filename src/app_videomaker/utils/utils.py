@@ -11,7 +11,7 @@ from uuid import uuid4
 
 from loguru import logger
 
-from models import const
+from src.app_videomaker.models import const
 
 
 def get_response(status: int, data: Any = None, message: str = ""):

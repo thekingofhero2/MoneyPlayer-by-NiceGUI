@@ -24,17 +24,17 @@ from moviepy import (
 from moviepy.video.tools.subtitles import SubtitlesClip
 from PIL import Image, ImageDraw, ImageFont
 
-from config import config
-from models import const
-from models.schema import (
+from src.app_videomaker.config import config
+from src.app_videomaker.models import const
+from src.app_videomaker.models.schema import (
     MaterialInfo,
     VideoAspect,
     VideoConcatMode,
     VideoParams,
     VideoTransitionMode,
 )
-from services.utils import video_effects
-from utils import file_security, utils
+from src.app_videomaker.services.utils import video_effects
+from src.app_videomaker.utils import file_security, utils
 
 class SubClippedVideoClip:
     def __init__(

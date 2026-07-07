@@ -3,9 +3,9 @@ from typing import Dict
 
 import redis
 
-from controllers.manager.base_manager import TaskManager
-from models.schema import VideoParams
-from services import task as tm
+from src.app_videomaker.controllers.manager.base_manager import TaskManager
+from src.app_videomaker.models.schema import VideoParams
+from src.app_videomaker.services import task as tm
 
 FUNC_MAP = {
     "start": tm.start,

@@ -8,9 +8,9 @@ import requests
 from loguru import logger
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
-from config import config
-from models.schema import MaterialInfo, VideoAspect, VideoConcatMode
-from utils import utils
+from src.app_videomaker.config import config
+from src.app_videomaker.models.schema import MaterialInfo, VideoAspect, VideoConcatMode
+from src.app_videomaker.utils import utils
 
 # Thread-safe counter for API key rotation
 _api_key_counter = 0

@@ -3,8 +3,7 @@ import sys
 
 from loguru import logger
 
-from config import config
-from utils import utils
+from src.app_videomaker.config.config import config
 
 
 def __init_logger():

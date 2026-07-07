@@ -9,14 +9,14 @@ from fastapi.params import File
 from fastapi.responses import FileResponse, StreamingResponse
 from loguru import logger
 
-from config import config
-from controllers import base
-from controllers.manager.base_manager import TaskQueueFullError
-from controllers.manager.memory_manager import InMemoryTaskManager
-from controllers.manager.redis_manager import RedisTaskManager
-from controllers.v1.base import new_router
-from models.exception import HttpException
-from models.schema import (
+from src.app_videomaker.config import config
+from src.app_videomaker.controllers import base
+from src.app_videomaker.controllers.manager.base_manager import TaskQueueFullError
+from src.app_videomaker.controllers.manager.memory_manager import InMemoryTaskManager
+from src.app_videomaker.controllers.manager.redis_manager import RedisTaskManager
+from src.app_videomaker.controllers.v1.base import new_router
+from src.app_videomaker.models.exception import HttpException
+from src.app_videomaker.models.schema import (
     AudioRequest,
     BgmRetrieveResponse,
     BgmUploadResponse,
@@ -29,9 +29,9 @@ from models.schema import (
     VideoMaterialUploadResponse,
     VideoMaterialRetrieveResponse
 )
-from services import state as sm
-from services import task as tm
-from utils import file_security, utils
+from src.app_videomaker.services import state as sm
+from src.app_videomaker.services import task as tm
+from src.app_videomaker.utils import file_security, utils
 
 # 认证依赖项
 # router = new_router(dependencies=[Depends(base.verify_token)])

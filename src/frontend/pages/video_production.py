@@ -10,6 +10,34 @@ from src.repositories.video_script import video_script_repo
 from src.models import VideoTaskCreate, UserVideoConfigCreate
 
 
+# ============== 常量定义 ==============
+
+STATUS_CONFIG = {
+    0: ("gray", "挂起"),
+    1: ("blue", "进行中"),
+    2: ("green", "成功"),
+    -1: ("red", "失败"),
+}
+
+
+def get_status_color(status):
+    """获取状态颜色"""
+    return STATUS_CONFIG.get(status, ("gray", "未知"))[0]
+
+
+def get_status_label(status):
+    """获取状态标签"""
+    return STATUS_CONFIG.get(status, ("gray", "未知"))[1]
+
+
+# ============== 通用工具函数 ==============
+
+def get_current_user():
+    """获取当前用户"""
+    with get_db_context() as db:
+        return get_current_user_from_state(db)
+
+
 @ui.page("/video-production")
 def video_production_page():
     """视频制作页面"""
@@ -131,156 +159,10 @@ def render_global_config_section():
         
         ui.separator().classes("my-6")
         
-        # # 默认视频参数
-        # ui.label("默认视频参数").classes("text-lg font-bold mb-3")
-        
-        # with ui.grid().classes("w-full grid-cols-1 md:grid-cols-2 gap-4 mb-4"):
-        #     # 视频比例
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("默认视频比例").classes("text-sm font-bold mb-1")
-        #         default_video_aspect = ui.select(
-        #             {"16:9": "16:9 (横屏)", "9:16": "9:16 (竖屏)"},
-        #             value="9:16",
-        #         ).classes("w-full")
-            
-        #     # 拼接模式
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("默认拼接模式").classes("text-sm font-bold mb-1")
-        #         default_concat_mode = ui.select(
-        #             {"sequential": "顺序拼接", "random": "随机拼接"},
-        #             value="random",
-        #         ).classes("w-full")
-            
-        #     # 片段时长
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("默认片段时长（秒）").classes("text-sm font-bold mb-1")
-        #         default_clip_duration = ui.slider(min=1, max=20, step=1, value=5).props("label-always snap").classes("w-full")
-            
-        #     # 线程数
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("线程数").classes("text-sm font-bold mb-1")
-        #         default_n_threads = ui.slider(min=1, max=8, step=1, value=2).props("label-always snap").classes("w-full")
-        
-        # ui.separator().classes("my-6")
-        
-        # # 默认音频参数
-        # ui.label("默认音频参数").classes("text-lg font-bold mb-3")
-        
-        # with ui.grid().classes("w-full grid-cols-1 md:grid-cols-2 gap-4 mb-4"):
-        #     # 语音名称
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("默认语音名称").classes("text-sm font-bold mb-1")
-        #         default_voice_name = ui.select(
-        #             {
-        #                 "zh-CN-XiaoxiaoNeural-Female": "晓晓（女声）",
-        #                 "zh-CN-YunxiNeural-Male": "云希（男声）",
-        #                 "zh-CN-YunyangNeural-Male": "云扬（男声）",
-        #                 "zh-CN-XiaoyiNeural-Female": "晓伊（女声）",
-        #                 "zh-CN-YunjianNeural-Male": "云健（男声）",
-        #             },
-        #             value="zh-CN-XiaoxiaoNeural-Female",
-        #         ).classes("w-full")
-            
-        #     # 语音音量
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("默认语音音量").classes("text-sm font-bold mb-1")
-        #         default_voice_volume = ui.slider(min=0, max=2, step=0.1, value=1.0).props("label-always").classes("w-full")
-            
-        #     # 语音速度
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("默认语音速度").classes("text-sm font-bold mb-1")
-        #         default_voice_rate = ui.slider(min=0.5, max=2, step=0.1, value=1.0).props("label-always").classes("w-full")
-            
-        #     # 背景音乐类型
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("背景音乐类型").classes("text-sm font-bold mb-1")
-        #         default_bgm_type = ui.select(
-        #             {"random": "随机", "custom": "自定义"},
-        #             value="random",
-        #         ).classes("w-full")
-            
-        #     # 背景音乐文件
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("背景音乐文件").classes("text-sm font-bold mb-1")
-        #         default_bgm_file = ui.input("文件路径", placeholder="留空使用随机").classes("w-full")
-            
-        #     # 背景音乐音量
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("背景音乐音量").classes("text-sm font-bold mb-1")
-        #         default_bgm_volume = ui.slider(min=0, max=1, step=0.05, value=0.2).props("label-always").classes("w-full")
-        
-        # ui.separator().classes("my-6")
-        
-        # # 默认字幕参数
-        # ui.label("默认字幕参数").classes("text-lg font-bold mb-3")
-        
-        # with ui.grid().classes("w-full grid-cols-1 md:grid-cols-2 gap-4 mb-4"):
-        #     # 是否启用字幕
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("启用字幕").classes("text-sm font-bold mb-1")
-        #         default_subtitle_enabled = ui.switch(value=True).classes("w-full")
-            
-        #     # 字幕位置
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("字幕位置").classes("text-sm font-bold mb-1")
-        #         default_subtitle_position = ui.select(
-        #             {"top": "顶部", "middle": "中间", "bottom": "底部"},
-        #             value="bottom",
-        #         ).classes("w-full")
-            
-        #     # 自定义位置
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("自定义位置（%）").classes("text-sm font-bold mb-1")
-        #         default_custom_position = ui.slider(min=0, max=100, step=1, value=70).props("label-always snap").classes("w-full")
-            
-        #     # 字体名称
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("字体名称").classes("text-sm font-bold mb-1")
-        #         default_font_name = ui.select(
-        #             {
-        #                 "STHeitiMedium.ttc": "黑体",
-        #                 "STSong.ttc": "宋体",
-        #                 "Arial": "Arial",
-        #                 "Microsoft YaHei": "微软雅黑",
-        #             },
-        #             value="STHeitiMedium.ttc",
-        #         ).classes("w-full")
-            
-        #     # 字体大小
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("字体大小").classes("text-sm font-bold mb-1")
-        #         default_font_size = ui.slider(min=20, max=100, step=2, value=60).props("label-always snap").classes("w-full")
-            
-        #     # 字体颜色
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("字体颜色").classes("text-sm font-bold mb-1")
-        #         default_text_fore_color = ui.color_input("", value="#FFFFFF").classes("w-full")
-            
-        #     # 描边颜色
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("描边颜色").classes("text-sm font-bold mb-1")
-        #         default_stroke_color = ui.color_input("", value="#000000").classes("w-full")
-            
-        #     # 描边宽度
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("描边宽度").classes("text-sm font-bold mb-1")
-        #         default_stroke_width = ui.slider(min=0, max=5, step=0.5, value=1.5).props("label-always snap").classes("w-full")
-            
-        #     # 启用字幕背景
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("启用字幕背景").classes("text-sm font-bold mb-1")
-        #         default_text_background_color = ui.switch(value=True).classes("w-full")
-            
-        #     # 圆角字幕背景
-        #     with ui.column().classes("col-span-1"):
-        #         ui.label("圆角字幕背景").classes("text-sm font-bold mb-1")
-        #         default_rounded_subtitle_background = ui.switch(value=False).classes("w-full")
-        
         # 保存按钮
         with ui.row().classes("w-full justify-end mt-6 gap-2"):
             async def save_global_config():
                 """保存全局配置到数据库"""
-                # 验证视频来源配置
                 if source_type.value == "pexels" and not pexels_api_key.value:
                     notifications.show_error("使用 Pexels 时需要配置 API Key")
                     return
@@ -289,30 +171,17 @@ def render_global_config_section():
                     return
                 
                 try:
+                    config_in = UserVideoConfigCreate(
+                        pexels_api_key=pexels_api_key.value if source_type.value == "pexels" else None,
+                        local_video_dir=local_video_dir.value if source_type.value == "local" else None,
+                        siliflow_api_key=siliflow_api_key.value,
+                        mimo_api_key=mimo_api_key.value,
+                        azure_api_key=azure_api_key.value,
+                    )
                     with get_db_context() as db:
-                        current_user = get_current_user_from_state(db)
-                        
-                        config_in = UserVideoConfigCreate(
-                            pexels_api_key=pexels_api_key.value if source_type.value == "pexels" else None,
-                            local_video_dir=local_video_dir.value if source_type.value == "local" else None,
-                            siliflow_api_key=siliflow_api_key.value,
-                            mimo_api_key=mimo_api_key.value,
-                            azure_api_key=azure_api_key.value,
-                            # default_volume=default_voice_volume.value,
-                            # default_speed=default_voice_rate.value,
-                            # default_bgm=default_bgm_file.value,
-                            # default_bgm_volume=default_bgm_volume.value,
-                            # default_font=default_font_name.value,
-                            # default_font_position=default_subtitle_position.value,
-                            # default_font_color=default_text_fore_color.value,
-                            # default_bg_color=default_stroke_color.value,
-                            # default_enable_bg=default_text_background_color.value,
+                        user_video_config_repo.create_or_update(
+                            db=db, obj_in=config_in, current_user_id=get_current_user().id
                         )
-                        
-                        config = user_video_config_repo.create_or_update(
-                            db=db, obj_in=config_in, current_user_id=current_user.id
-                        )
-                    
                     notifications.show_success("全局配置已保存到数据库！")
                 except Exception as e:
                     notifications.show_error(f"保存失败：{str(e)}")
@@ -324,39 +193,39 @@ def render_global_config_section():
             """从数据库加载用户配置"""
             try:
                 with get_db_context() as db:
-                    current_user = get_current_user_from_state(db)
                     config = user_video_config_repo.get_for_user(
-                        db=db, current_user_id=current_user.id
+                        db=db, current_user_id=get_current_user().id
                     )
                     
-                    if config:
-                        # 视频来源配置
-                        if config.pexels_api_key:
-                            source_type.value = "pexels"
-                            pexels_api_key.value = config.pexels_api_key
-                        if config.local_video_dir:
-                            source_type.value = "local"
-                            local_video_dir.value = config.local_video_dir
-                        
-                        # TTS 配置
-                        siliflow_api_key.value = config.siliflow_api_key or ""
-                        mimo_api_key.value = config.mimo_api_key or ""
-                        azure_api_key.value = config.azure_api_key or ""
-                        
-                        # 默认设置
-                        default_voice_volume.value = config.default_volume
-                        default_voice_rate.value = config.default_speed
-                        default_bgm_file.value = config.default_bgm or ""
-                        default_bgm_volume.value = config.default_bgm_volume
-                        default_font_name.value = config.default_font
-                        default_subtitle_position.value = config.default_font_position
-                        default_text_fore_color.value = config.default_font_color
-                        default_stroke_color.value = config.default_bg_color
-                        default_text_background_color.value = config.default_enable_bg
-            except Exception as e:
+                    if not config:
+                        return
+                    
+                    # 视频来源配置
+                    if config.pexels_api_key:
+                        source_type.value = "pexels"
+                        pexels_api_key.value = config.pexels_api_key
+                    if config.local_video_dir:
+                        source_type.value = "local"
+                        local_video_dir.value = config.local_video_dir
+                    
+                    # TTS 配置
+                    siliflow_api_key.value = config.siliflow_api_key or ""
+                    mimo_api_key.value = config.mimo_api_key or ""
+                    azure_api_key.value = config.azure_api_key or ""
+                    
+                    # 默认设置
+                    default_voice_volume.value = config.default_volume
+                    default_voice_rate.value = config.default_speed
+                    default_bgm_file.value = config.default_bgm or ""
+                    default_bgm_volume.value = config.default_bgm_volume
+                    default_font_name.value = config.default_font
+                    default_subtitle_position.value = config.default_font_position
+                    default_text_fore_color.value = config.default_font_color
+                    default_stroke_color.value = config.default_bg_color
+                    default_text_background_color.value = config.default_enable_bg
+            except Exception:
                 pass
         
-        # 页面加载时自动加载配置
         ui.timer(0.1, lambda: load_user_config(), once=True)
 
 
@@ -377,27 +246,27 @@ def render_task_config_section():
         script_options = {}
         selected_script_content = {"value": None, "search_terms": None}
         
-        async def load_scripts():
+        def load_scripts():
             """加载用户文案列表"""
             try:
                 with get_db_context() as db:
-                    current_user = get_current_user_from_state(db)
-                    scripts = video_script_repo.get_for_user(db=db, current_user_id=current_user.id)
-                    
-                    # 按时间倒序
-                    scripts = sorted(scripts, key=lambda x: x.created_at or "", reverse=True)
-                    
-                    # 构建选项
-                    script_options.clear()
-                    for script in scripts:
-                        preview = script.content[:50].replace("\n", " ") + "..." if len(script.content) > 50 else script.content
-                        script_options[script.id] = f"{script.theme} - {preview}"
-                    
-                    # 更新选项
-                    script_select.options = script_options
-                    if script_options:
-                        script_select.value = list(script_options.keys())[0]
-            except Exception as e:
+                    scripts = video_script_repo.get_for_user(
+                        db=db, current_user_id=get_current_user().id
+                    )
+                
+                # 按时间倒序
+                scripts = sorted(scripts, key=lambda x: x.created_at or "", reverse=True)
+                
+                # 构建选项
+                script_options.clear()
+                for script in scripts:
+                    preview = (script.content[:50].replace("\n", " ") + "...") if len(script.content) > 50 else script.content
+                    script_options[script.id] = f"{script.theme} - {preview}"
+                
+                script_select.options = script_options
+                if script_options:
+                    script_select.value = list(script_options.keys())[0]
+            except Exception:
                 pass
         
         
@@ -406,15 +275,13 @@ def render_task_config_section():
             if script_select.value:
                 try:
                     with get_db_context() as db:
-                        current_user = get_current_user_from_state(db)
                         script = video_script_repo.get_by_id(db=db, script_id=script_select.value)
-                        if script and script.user_id == current_user.id:
+                        if script and script.user_id == get_current_user().id:
                             video_subject.value = script.theme
                             selected_script_content["value"] = script.content
                             selected_script_content["search_terms"] = script.keywords
-                except Exception as e:
-                    import traceback
-                    traceback.print_exc()
+                except Exception:
+                    pass
         script_select = ui.select(
             {},
             label="选择已生成的文案",
@@ -436,6 +303,7 @@ def render_task_config_section():
         ui.label("3. 视频参数").classes("text-lg font-bold mb-3")
         
         with ui.grid().classes("w-full grid-cols-1 md:grid-cols-2 gap-4 mb-4"):
+            video_if = ui.checkbox("是否合成视频", value=True).classes("w-full mb-4")
             # 视频来源
             with ui.column().classes("col-span-1"):
                 ui.label("视频来源").classes("text-sm font-bold mb-1")
@@ -479,20 +347,37 @@ def render_task_config_section():
         
         # 4. 音频参数
         ui.label("4. 音频参数").classes("text-lg font-bold mb-3")
-        
+        def get_siliconflow_voices() -> list[str]:
+            """
+            获取硅基流动的声音列表
+
+            Returns:
+                声音列表，格式为 ["siliconflow:FunAudioLLM/CosyVoice2-0.5B:alex", ...]
+            """
+            # 硅基流动的声音列表和对应的性别（用于显示）
+            voices_with_gender = [
+                ("FunAudioLLM/CosyVoice2-0.5B", "alex", "Male"),
+                ("FunAudioLLM/CosyVoice2-0.5B", "anna", "Female"),
+                ("FunAudioLLM/CosyVoice2-0.5B", "bella", "Female"),
+                ("FunAudioLLM/CosyVoice2-0.5B", "benjamin", "Male"),
+                ("FunAudioLLM/CosyVoice2-0.5B", "charles", "Male"),
+                ("FunAudioLLM/CosyVoice2-0.5B", "claire", "Female"),
+                ("FunAudioLLM/CosyVoice2-0.5B", "david", "Male"),
+                ("FunAudioLLM/CosyVoice2-0.5B", "diana", "Female"),
+            ]
+
+            # 添加siliconflow:前缀，并格式化为显示名称
+            return [
+                f"siliconflow:{model}:{voice}-{gender}"
+                for model, voice, gender in voices_with_gender
+            ]
         with ui.grid().classes("w-full grid-cols-1 md:grid-cols-2 gap-4 mb-4"):
             # 语音名称
             with ui.column().classes("col-span-1"):
                 ui.label("语音名称").classes("text-sm font-bold mb-1")
                 voice_name = ui.select(
-                    {
-                        "zh-CN-XiaoxiaoNeural-Female": "晓晓（女声）",
-                        "zh-CN-YunxiNeural-Male": "云希（男声）",
-                        "zh-CN-YunyangNeural-Male": "云扬（男声）",
-                        "zh-CN-XiaoyiNeural-Female": "晓伊（女声）",
-                        "zh-CN-YunjianNeural-Male": "云健（男声）",
-                    },
-                    value="zh-CN-XiaoxiaoNeural-Female",
+                    get_siliconflow_voices(),
+                    value="siliconflow:FunAudioLLM/CosyVoice2-0.5B:alex-Male",
                 ).classes("w-full")
             
             # 语音音量
@@ -622,6 +507,7 @@ def render_task_config_section():
                         "video_clip_duration": video_clip_duration.value,
                         "video_count": video_count.value,
                         "video_source": video_source.value,
+                        "video_if": video_if.value,
                         "video_materials": None,
                         "custom_audio_file": None,
                         "video_language": "zh-CN",
@@ -649,22 +535,16 @@ def render_task_config_section():
                 }
                 
                 try:
+                    task_in = VideoTaskCreate(
+                        video_source=video_source.value,
+                        config_json=json.dumps(script_json, ensure_ascii=False, indent=2),
+                        status=0,
+                    )
                     with get_db_context() as db:
-                        current_user = get_current_user_from_state(db)
-                        
-                        # 创建任务，将完整的 script.json 存入数据库
-                        task_in = VideoTaskCreate(
-                            video_source=video_source.value,
-                            config_json=json.dumps(script_json, ensure_ascii=False, indent=2),
-                            status=0,  # 挂起状态
-                        )
-                        
                         task = video_task_repo.create(
-                            db=db, obj_in=task_in, current_user_id=current_user.id
+                            db=db, obj_in=task_in, current_user_id=get_current_user().id
                         )
-                    
                     notifications.show_success(f"任务创建成功！任务 ID: {task.id}")
-                    
                 except Exception as e:
                     notifications.show_error(f"创建任务失败：{str(e)}")
             
@@ -679,21 +559,6 @@ def render_task_list_section():
         # 任务列表容器
         task_list_container = ui.column().classes("w-full gap-4")
         
-        # 状态徽章颜色映射
-        status_colors = {
-            0: "gray",    # 挂起
-            1: "blue",    # 进行中
-            2: "green",   # 成功
-            -1: "red",    # 失败
-        }
-        
-        status_labels = {
-            0: "挂起",
-            1: "进行中",
-            2: "成功",
-            -1: "失败",
-        }
-        
         def render_task_item(task):
             """渲染单个任务项"""
             with ui.card().classes("w-full p-4"):
@@ -702,8 +567,8 @@ def render_task_list_section():
                         with ui.row().classes("items-center gap-2"):
                             ui.label(f"任务 ID: {task.id}").classes("text-lg font-bold")
                             status_chip = ui.chip(
-                                status_labels.get(task.status, "未知"),
-                                color=status_colors.get(task.status, "gray")
+                                get_status_label(task.status),
+                                color=get_status_color(task.status)
                             ).props("text-color=white size=sm")
                             
                             # 视频来源标识
@@ -783,7 +648,6 @@ def render_task_list_section():
                         async def do_delete(dialog):
                             try:
                                 with get_db_context() as db:
-                                    current_user = get_current_user_from_state(db)
                                     video_task_repo.remove(db=db, id=task.id)
                                 notifications.show_success("任务已删除")
                                 dialog.close()
@@ -795,15 +659,14 @@ def render_task_list_section():
                             "flat dense color=red"
                         )
         
-        async def load_tasks():
+        def load_tasks():
             """加载任务列表"""
             task_list_container.clear()
             
             try:
                 with get_db_context() as db:
-                    current_user = get_current_user_from_state(db)
                     tasks = video_task_repo.get_for_user(
-                        db=db, current_user_id=current_user.id
+                        db=db, current_user_id=get_current_user().id
                     )
                 
                 if not tasks:

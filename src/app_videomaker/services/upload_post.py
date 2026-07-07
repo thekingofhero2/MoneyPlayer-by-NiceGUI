@@ -8,7 +8,7 @@ from typing import Optional
 
 import requests
 from loguru import logger
-from config import config
+from src.app_videomaker.config import config
 
 
 class UploadPostService:

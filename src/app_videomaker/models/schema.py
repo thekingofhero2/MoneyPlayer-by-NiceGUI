@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Union
 import pydantic
 from pydantic import BaseModel, Field
 
-from config import config
+from src.app_videomaker.config import config
 
 # 忽略 Pydantic 的特定警告
 warnings.filterwarnings(

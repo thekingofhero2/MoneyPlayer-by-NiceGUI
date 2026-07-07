@@ -1,6 +1,7 @@
 import os
 import shutil
 import socket
+import types
 
 import toml
 from loguru import logger
@@ -197,3 +198,20 @@ if ffmpeg_path and os.path.isfile(ffmpeg_path):
     os.environ["IMAGEIO_FFMPEG_EXE"] = ffmpeg_path
 
 logger.info(f"{project_name} v{project_version}")
+
+# 创建一个命名空间对象来统一导出所有配置
+config = types.SimpleNamespace(
+    app=app,
+    whisper=whisper,
+    proxy=proxy,
+    azure=azure,
+    siliconflow=siliconflow,
+    ui=ui,
+    log_level=log_level,
+    listen_host=listen_host,
+    listen_port=listen_port,
+    project_name=project_name,
+    project_description=project_description,
+    project_version=project_version,
+    reload_debug=reload_debug,
+)

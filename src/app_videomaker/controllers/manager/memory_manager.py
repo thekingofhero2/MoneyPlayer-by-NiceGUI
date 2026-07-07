@@ -1,7 +1,7 @@
 from queue import Queue
 from typing import Dict
 
-from controllers.manager.base_manager import TaskManager
+from src.app_videomaker.controllers.manager.base_manager import TaskManager
 
 
 class InMemoryTaskManager(TaskManager):

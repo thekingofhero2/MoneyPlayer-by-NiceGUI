@@ -23,8 +23,8 @@ from moviepy.video.tools import subtitles
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from openai import OpenAI
 
-from config import config
-from utils import utils
+from src.app_videomaker.config import config
+from src.app_videomaker.utils import utils
 
 _DEFAULT_EDGE_TTS_TIMEOUT_SECONDS = 30.0
 _MIMO_DEFAULT_BASE_URL = "https://api.xiaomimimo.com/v1"

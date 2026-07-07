@@ -17,9 +17,9 @@ sys.path.insert(0, str(root_dir))
 from loguru import logger
 from src.db.session import get_db_context
 from src.models.models import VideoTask
-from services import task as task_service
-from utils import utils
-from utils import minio_utils
+from src.app_videomaker.services import task as task_service
+from src.app_videomaker.utils import utils
+from src.app_videomaker.utils import minio_utils
 
 # 线程池大小
 MAX_WORKERS = 10
@@ -68,10 +68,14 @@ def make_video(
     logger.info(f"开始制作视频，任务 ID: {task_id}")
     logger.info(f"视频主题：{video_subject}")
     
-    
-    
+    video_if = params.pop('video_if', True)
+    if video_if:
+        stop_at = "video"
+    else:
+        stop_at = "audio"
+        
     # 执行视频制作任务
-    result = task_service.start(task_id=task_id, dict_params=params)
+    result = task_service.start(task_id=task_id, dict_params=params, stop_at=stop_at)
     
     if result and "videos" in result:
         logger.success(f"视频制作完成！")

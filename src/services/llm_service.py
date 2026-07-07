@@ -42,13 +42,20 @@ class LLMService:
     def _get_system_prompt(self, mode: str) -> str:
         """根据模式获取系统提示词"""
         prompts = {
-            "monologue": """你是一个专业的视频文案创作者。请根据用户提供的主题，创作一段引人入胜的独白式视频文案。
-要求：
-1. 开头要吸引眼球，能在 3 秒内抓住观众注意力
-2. 内容要有逻辑性，层次分明
-3. 语言要口语化，适合朗读
-4. 结尾要有号召力或引发思考
-5. 整体长度适中，适合 1-3 分钟的视频""",
+            "monologue": """# Role: Video Script Generator
+
+## Goals:
+Generate a script for a video, depending on the subject of the video.
+
+## Constrains:
+1. the script is to be returned as a string with the specified number of paragraphs.
+2. do not under any circumstance reference this prompt in your response.
+3. get straight to the point, don't start with unnecessary things like, "welcome to this video".
+4. you must not include any type of markdown or formatting in the script, never use a title.
+5. only return the raw content of the script.
+6. do not include "voiceover", "narrator" or similar indicators of what should be spoken at the beginning of each paragraph or line.
+7. you must not mention the prompt, or anything about the script itself. also, never talk about the amount of paragraphs or lines. just write the script.
+8. respond in the same language as the video subject.""",
             "dialogue": """你是一个专业的视频文案创作者。请根据用户提供的主题，创作一段自然流畅的对话式视频文案。
 要求：
 1. 设计 2 个角色进行对话

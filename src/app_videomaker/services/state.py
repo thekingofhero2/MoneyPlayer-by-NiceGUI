@@ -1,8 +1,8 @@
 import ast
 from abc import ABC, abstractmethod
 
-from config import config
-from models import const
+from src.app_videomaker.config import config
+from src.app_videomaker.models import const
 
 
 # Base class for state management

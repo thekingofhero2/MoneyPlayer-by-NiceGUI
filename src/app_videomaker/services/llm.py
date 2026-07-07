@@ -8,7 +8,7 @@ from loguru import logger
 from openai import AzureOpenAI, OpenAI, AsyncOpenAI
 from openai.types.chat import ChatCompletion
 
-from config import config
+from src.app_videomaker.config import config
 
 _max_retries = 5
 _DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
