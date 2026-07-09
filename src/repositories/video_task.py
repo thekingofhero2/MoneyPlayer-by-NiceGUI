@@ -1,6 +1,7 @@
 from typing import Optional, List
 from sqlmodel import Session, select
 from src.models import VideoTask, VideoTaskCreate, VideoTaskRead, UserVideoConfig, UserVideoConfigCreate
+from src.app_videomaker.utils import utils
 from datetime import datetime
 
 
@@ -13,6 +14,7 @@ class VideoTaskRepository:
         """创建新的视频任务"""
         db_obj = VideoTask(
             **dict(obj_in),
+            #task_uuid=utils.get_uuid(),
             user_id=current_user_id,
             created_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             updated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

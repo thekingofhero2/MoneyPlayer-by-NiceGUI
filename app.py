@@ -17,6 +17,7 @@ from src.frontend.pages import (
     profile as profile_page,
     video_scripts as video_scripts_page,
     video_production as video_production_page,
+    video_player as video_player_page,
 )
 
 # 视频任务调度器线程

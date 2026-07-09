@@ -25,11 +25,11 @@ def get_user_from_token(db: Session, token: str) -> models.User:
     except (JWTError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials",
+            detail="认证失效",
         )
     user = db.get(models.User, int(token_data))
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="用户不存在")
     return user
 
 
@@ -49,6 +49,6 @@ def get_current_active_superuser(
     """A dependency function that verifies if the current user has superuser privileges."""
     if not current_user.is_superuser:
         raise HTTPException(
-            status_code=403, detail="The user doesn't have enough privileges"
+            status_code=403, detail="用户不是超级管理员，权限不足"
         )
     return current_user

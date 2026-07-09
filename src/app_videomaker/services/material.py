@@ -11,6 +11,7 @@ from moviepy.video.io.VideoFileClip import VideoFileClip
 from src.app_videomaker.config import config
 from src.app_videomaker.models.schema import MaterialInfo, VideoAspect, VideoConcatMode
 from src.app_videomaker.utils import utils
+from src.app_videomaker.services import material_library
 
 # Thread-safe counter for API key rotation
 _api_key_counter = 0
@@ -165,9 +166,27 @@ def search_videos_pixabay(
     return []
 
 
-def save_video(video_url: str, save_dir: str = "") -> str:
+def save_video(video_url: str, save_dir: str = "", search_term: str = "", provider: str = "pexels") -> str:
+    """
+    保存视频到本地
+
+    Args:
+        video_url: 视频 URL
+        save_dir: 保存目录（为空则使用默认目录）
+        search_term: 搜索关键词（用于分目录存储）
+        provider: 素材来源 (pexels/pixabay)
+
+    Returns:
+        视频保存路径，失败返回空字符串
+    """
     if not save_dir:
         save_dir = utils.storage_dir("cache_videos")
+
+    # 如果有 search_term，创建子目录
+    if search_term:
+        # 清理搜索词作为目录名
+        safe_term = "".join(c if c.isalnum() or c in ('_', '-', ' ') else '_' for c in search_term)
+        save_dir = os.path.join(save_dir, safe_term)
 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -251,7 +270,7 @@ def download_videos(
 
         for item in video_items:
             if item.url not in valid_video_urls:
-                valid_video_items.append(item)
+                valid_video_items.append((item, search_term))  # 保存 item 和对应的 search_term
                 valid_video_urls.append(item.url)
                 found_duration += item.duration
 
@@ -271,15 +290,31 @@ def download_videos(
         random.shuffle(valid_video_items)
 
     total_duration = 0.0
-    for item in valid_video_items:
+    for item, item_search_term in valid_video_items:
         try:
-            logger.info(f"downloading video: {item.url}")
+            logger.info(f"downloading video: {item.url}, search_term: {item_search_term}")
             saved_video_path = save_video(
-                video_url=item.url, save_dir=material_directory
+                video_url=item.url,
+                save_dir=material_directory,
+                search_term=item_search_term,
+                provider=item.provider
             )
             if saved_video_path:
                 logger.info(f"video saved: {saved_video_path}")
                 video_paths.append(saved_video_path)
+
+                # 添加到本地素材库（ChromaDB）
+                if item_search_term:
+                    try:
+                        material_library.add_video_material(
+                            video_path=saved_video_path,
+                            search_term=item_search_term,
+                            provider=item.provider,
+                            duration=int(item.duration)
+                        )
+                    except Exception as lib_error:
+                        logger.warning(f"Failed to add video to material library: {lib_error}")
+
                 seconds = min(max_clip_duration, item.duration)
                 total_duration += seconds
                 if total_duration > audio_duration:

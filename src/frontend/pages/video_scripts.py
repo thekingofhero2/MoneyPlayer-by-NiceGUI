@@ -204,9 +204,9 @@ def render_config_section():
     """渲染配置区域"""
     # 默认配置
     default_config = {
-        "api_base": "https://api.openai.com/v1",
+        "api_base": "https://api.siliconflow.cn/v1",
         "api_key": "",
-        "model": "gpt-3.5-turbo",
+        "model": "deepseek-ai/DeepSeek-V4-Flash",
         "max_tokens": 2000,
         "temperature": 0.7,
     }
@@ -337,9 +337,9 @@ def render_generation_section(load_history_scripts_callback):
         mode_select = ui.select(
             {
                 "monologue": "独白",
-                "dialogue": "对话",
-                "interview": "访谈",
-                "story": "故事",
+                # "dialogue": "对话",
+                # "interview": "访谈",
+                # "story": "故事",
             },
             value="monologue",
             label="文案模式",
@@ -456,7 +456,8 @@ def render_generation_section(load_history_scripts_callback):
             async for chunk in llm_service.generate_script(
                 theme=theme_input.value, mode=mode_select.value,
             ):
-                content += chunk
+                if chunk is not None:
+                    content += chunk
                 # 实时更新编辑器显示
                 content_editor.value = content + "▌"
                 await asyncio.sleep(0.05)
@@ -496,6 +497,8 @@ def render_generation_section(load_history_scripts_callback):
             await load_history_scripts_callback()
 
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             notifications.show_error(f"生成失败：{str(e)}")
             status_label.text = "生成失败"
         finally:

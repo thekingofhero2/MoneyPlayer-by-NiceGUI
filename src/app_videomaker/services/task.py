@@ -9,6 +9,7 @@ from loguru import logger
 from src.app_videomaker.models import const
 from src.app_videomaker.models.schema import VideoConcatMode, VideoParams
 from src.app_videomaker.services import llm, material, subtitle, video, voice, upload_post
+from src.app_videomaker.services import material_library
 #from services import state as sm
 from src.app_videomaker.utils import utils
 
@@ -176,6 +177,64 @@ def get_video_materials(task_id, params, video_terms, audio_duration):
             )
             return None
         return [material_info.url for material_info in materials]
+    elif params.video_source == "material_library":
+        # 从本地素材库获取视频
+        logger.info(f"\n\n## getting videos from local material library")
+        videos_by_term = material_library.get_video_paths_for_creation(video_terms)
+        
+        # 合并所有搜索词的素材
+        all_videos = []
+        for term, videos in videos_by_term.items():
+            logger.info(f"found {len(videos)} videos for '{term}'")
+            all_videos.extend(videos)
+        
+        if not all_videos:
+            logger.warning(
+                f"no videos found in material library for terms: {video_terms}. "
+                "falling back to downloading from online sources."
+            )
+            # 如果素材库没有素材，回退到在线下载
+            downloaded_videos = material.download_videos(
+                task_id=task_id,
+                search_terms=video_terms,
+                source="pexels",  # 默认使用 pexels
+                video_aspect=params.video_aspect,
+                video_contact_mode=params.video_concat_mode,
+                audio_duration=audio_duration * params.video_count,
+                max_clip_duration=params.video_clip_duration,
+            )
+            if not downloaded_videos:
+                logger.error(
+                    "failed to download videos from material library fallback, "
+                    "maybe the network is not available."
+                )
+                return None
+            return downloaded_videos
+        
+        # 如果素材不够，补充下载，每个视频至少5s
+        total_available = len(all_videos)*5
+        required_duration = audio_duration * params.video_count
+        if total_available < required_duration:
+            logger.info(
+                f"material library has {total_available} videos, "
+                f"but {required_duration} seconds are required. "
+                "downloading more from online sources..."
+            )
+            # 优先使用 pexels
+            source_for_download = "pexels"
+            downloaded_videos = material.download_videos(
+                task_id=task_id,
+                search_terms=video_terms,
+                source=source_for_download,
+                video_aspect=params.video_aspect,
+                video_contact_mode=params.video_concat_mode,
+                audio_duration=required_duration - total_available,
+                max_clip_duration=params.video_clip_duration,
+            )
+            if downloaded_videos:
+                all_videos.extend(downloaded_videos)
+        
+        return all_videos
     else:
         logger.info(f"\n\n## downloading videos from {params.video_source}")
         downloaded_videos = material.download_videos(

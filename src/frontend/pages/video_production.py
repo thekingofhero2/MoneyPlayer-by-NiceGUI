@@ -8,6 +8,9 @@ from src.db.session import get_db_context
 from src.repositories.video_task import video_task_repo, user_video_config_repo
 from src.repositories.video_script import video_script_repo
 from src.models import VideoTaskCreate, UserVideoConfigCreate
+from src.app_videomaker.utils import utils
+
+
 
 
 # ============== 常量定义 ==============
@@ -84,7 +87,7 @@ def render_global_config_section():
         with ui.row().classes("w-full items-center gap-4 mb-4"):
             ui.label("默认视频来源：").classes("font-bold")
             source_type = ui.radio(
-                {"pexels": "Pexels 在线素材", "local": "本地视频目录"},
+                {"pexels": "Pexels 在线素材", "local": "本地视频目录", "material_library": "本地素材库"},
                 value="pexels",
             ).classes("flex-1")
         
@@ -140,22 +143,23 @@ def render_global_config_section():
                 ).classes("w-full")
             
             # 小米 Mimo
-            with ui.card().classes("p-4"):
+            with ui.card().classes("p-4") as mimo_card:
                 ui.label("小米 Mimo API Key").classes("font-bold mb-2")
                 mimo_api_key = ui.input(
                     "API Key",
                     placeholder="请输入 API Key",
                     password=True
                 ).classes("w-full")
-            
+            mimo_card.visible = False
             # Azure 语音
-            with ui.card().classes("p-4"):
+            with ui.card().classes("p-4") as azure_card:
                 ui.label("Azure 语音 API Key").classes("font-bold mb-2")
                 azure_api_key = ui.input(
                     "API Key",
                     placeholder="请输入 Azure API Key",
                     password=True
                 ).classes("w-full")
+            azure_card.visible = False
         
         ui.separator().classes("my-6")
         
@@ -308,7 +312,7 @@ def render_task_config_section():
             with ui.column().classes("col-span-1"):
                 ui.label("视频来源").classes("text-sm font-bold mb-1")
                 video_source = ui.radio(
-                    {"pexels": "Pexels 在线素材", "local": "本地视频目录"},
+                    {"pexels": "Pexels 在线素材", "local": "本地视频目录", "material_library": "本地素材库"},
                     value="pexels",
                 ).classes("w-full")
             
@@ -536,6 +540,7 @@ def render_task_config_section():
                 
                 try:
                     task_in = VideoTaskCreate(
+                        task_uuid=utils.get_uuid(),
                         video_source=video_source.value,
                         config_json=json.dumps(script_json, ensure_ascii=False, indent=2),
                         status=0,
@@ -544,8 +549,10 @@ def render_task_config_section():
                         task = video_task_repo.create(
                             db=db, obj_in=task_in, current_user_id=get_current_user().id
                         )
-                    notifications.show_success(f"任务创建成功！任务 ID: {task.id}")
+                    notifications.show_success(f"任务创建成功！任务 ID: {task.task_uuid}")
                 except Exception as e:
+                    import traceback
+                    traceback.print_exc()
                     notifications.show_error(f"创建任务失败：{str(e)}")
             
             ui.button("创建任务", icon="add_task", on_click=create_task).props("color=primary size=lg")
@@ -565,15 +572,21 @@ def render_task_list_section():
                 with ui.row().classes("w-full justify-between items-start"):
                     with ui.column().classes("flex-1"):
                         with ui.row().classes("items-center gap-2"):
-                            ui.label(f"任务 ID: {task.id}").classes("text-lg font-bold")
+                            ui.label(f"任务 ID: {task.task_uuid}").classes("text-lg font-bold")
                             status_chip = ui.chip(
                                 get_status_label(task.status),
                                 color=get_status_color(task.status)
                             ).props("text-color=white size=sm")
                             
                             # 视频来源标识
+                            source_label = {
+                                "pexels": "Pexels",
+                                "pixabay": "Pixabay",
+                                "local": "本地目录",
+                                "material_library": "素材库"
+                            }.get(task.video_source, task.video_source)
                             source_badge = ui.chip(
-                                "Pexels" if task.video_source == "pexels" else "本地",
+                                source_label,
                                 color="blue-200"
                             ).props("text-color=blue-800 size=xs")
                         
@@ -611,9 +624,15 @@ def render_task_list_section():
                         
                         # 输出文件
                         if task.output_file:
-                            ui.link("输出", task.output_file).classes(
-                                "text-sm text-green-600 mt-2"
-                            )
+                            def open_video():
+                                app.storage.user["video_path"] = task.output_file
+                                ui.navigate.to("/video-player")
+                            
+                            ui.button(
+                                "视频预览",
+                                icon="play_circle",
+                                on_click=open_video
+                            ).props("flat dense color=green")
                     
                     # 操作按钮
                     with ui.column().classes("gap-1"):
@@ -623,13 +642,13 @@ def render_task_list_section():
                                 config = json.loads(task.config_json)
                                 detail_text = json.dumps(config, ensure_ascii=False, indent=2)
                                 await ui.dialog(
-                                    f"任务详情 - ID: {task.id}",
+                                    f"任务详情 - ID: {task.task_uuid}",
                                     content=ui.code(detail_text, language="json"),
                                     persistent=True
                                 )
                             except:
                                 await ui.dialog(
-                                    f"任务详情 - ID: {task.id}",
+                                    f"任务详情 - ID: {task.task_uuid}",
                                     content=ui.label("无法加载任务详情"),
                                     persistent=True
                                 )
@@ -648,7 +667,7 @@ def render_task_list_section():
                         async def do_delete(dialog):
                             try:
                                 with get_db_context() as db:
-                                    video_task_repo.remove(db=db, id=task.id)
+                                    video_task_repo.remove(db=db, id=task.task_uuid)
                                 notifications.show_success("任务已删除")
                                 dialog.close()
                                 await load_tasks()

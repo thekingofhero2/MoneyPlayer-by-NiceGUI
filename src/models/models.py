@@ -225,6 +225,9 @@ class UserVideoConfigRead(UserVideoConfigBase):
 class VideoTaskBase(SQLModel):
     """视频任务基础模型"""
 
+    # 任务 UUID
+    task_uuid: Optional[str] = Field(default=None, index=True, description="任务 UUID")
+
     # 数据来源配置
     video_source: str = Field(..., description="视频来源：pexels/local")
     
@@ -267,6 +270,7 @@ class VideoTaskRead(VideoTaskBase):
 
     id: int
     user_id: int
+    task_uuid: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 

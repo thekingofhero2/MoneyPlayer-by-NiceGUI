@@ -134,24 +134,51 @@ def get_ffmpeg_binary():
     return utils.get_ffmpeg_binary()
 
 
+@lru_cache(maxsize=1)
+def _detect_hardware_encoder() -> str:
+    """
+    自动检测系统可用的硬件视频编码器。
+
+    按优先级尝试：NVENC (NVIDIA) > AMF (AMD) > QSV (Intel) > VideoToolbox (macOS)
+    如果都没有可用编码器，返回 libx264。
+    """
+    ffmpeg_binary = utils.get_ffmpeg_binary()
+    hw_codecs = [
+        ("h264_nvenc", "NVIDIA NVENC"),
+        ("h264_amf", "AMD AMF"),
+        ("h264_qsv", "Intel QSV"),
+        ("h264_videotoolbox", "Apple VideoToolbox"),
+    ]
+    for codec, name in hw_codecs:
+        if _ffmpeg_encoder_exists(ffmpeg_binary, codec):
+            logger.info(f"detected hardware encoder: {name} ({codec})")
+            return codec
+    logger.info("no hardware encoder detected, using libx264")
+    return _DEFAULT_VIDEO_CODEC
+
+
 def _get_configured_video_codec() -> str:
     """
-    读取用户配置的视频编码器。
+    读取用户配置的视频编码器，未配置时自动检测硬件编码器。
 
     该配置面向高级用户，用于尝试启用 NVENC/AMF/QSV/VideoToolbox 等硬件
     编码。这里刻意只允许固定白名单，避免开放任意 FFmpeg 参数后，用户填错
     参数导致输出格式不可控，甚至让生成任务在后续阶段才失败。
+
+    如果用户未配置 video_codec，则自动检测并使用可用的硬件编码器。
     """
-    configured_codec = str(
-        config.app.get("video_codec", _DEFAULT_VIDEO_CODEC) or _DEFAULT_VIDEO_CODEC
-    ).strip()
-    if configured_codec not in _SUPPORTED_VIDEO_CODECS:
-        logger.warning(
-            f"unsupported video codec configured: {configured_codec}, "
-            f"fallback to {_DEFAULT_VIDEO_CODEC}"
-        )
-        return _DEFAULT_VIDEO_CODEC
-    return configured_codec
+    configured_codec = config.app.get("video_codec", "")
+    if configured_codec:
+        configured_codec = str(configured_codec).strip()
+        if configured_codec not in _SUPPORTED_VIDEO_CODECS:
+            logger.warning(
+                f"unsupported video codec configured: {configured_codec}, "
+                f"auto-detecting hardware encoder instead"
+            )
+            return _detect_hardware_encoder()
+        return configured_codec
+    # 未配置时自动检测硬件编码器
+    return _detect_hardware_encoder()
 
 
 @lru_cache(maxsize=16)

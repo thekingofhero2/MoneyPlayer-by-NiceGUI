@@ -6,6 +6,7 @@ import os
 import sys
 import time
 import json
+from datetime import datetime
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from sqlmodel import select
@@ -61,7 +62,7 @@ def make_video(
     """
     
     # 生成任务 ID
-    task_id = utils.get_uuid()
+    task_id = params.get('task_uuid')#utils.get_uuid()
     
     # 从 params 中获取视频主题
     video_subject = params.get('video_subject', '未命名')
@@ -114,8 +115,11 @@ def execute_task(db_task_id: int):
         try:
             config_data = json.loads(task.config_json)
             params = config_data.get("params", {})
+            params['task_uuid'] = task.task_uuid
+            params['task_id'] = config_data.get('db_task_id')
             params['video_script'] = config_data.get('script', '')
             params['video_terms'] = config_data.get('search_terms', '')
+            params['video_source'] = task.video_source
         except json.JSONDecodeError:
             logger.error(f"任务配置解析失败: {db_task_id}")
             task.status = -1  # -1-失败
@@ -136,19 +140,19 @@ def execute_task(db_task_id: int):
                 if result and "videos" in result:
                     # 任务成功完成
                     task.status = 2  # 2-成功
-                    # task.output_file = ",".join(result["videos"])
+                    task.output_file = ",".join(result["videos"])
                     task.result_message = f"成功生成 {len(result['videos'])} 个视频"
                     
                     # 上传视频到 MinIO 并更新下载链接
-                    try:
-                        minio_utils.batch_upload_videos(db_task_id, result["videos"])
-                    except Exception as upload_error:
-                        logger.warning(f"上传视频到 MinIO 失败: {upload_error}")
+                    # try:
+                    #     minio_utils.batch_upload_videos(db_task_id, result["videos"])
+                    # except Exception as upload_error:
+                    #     logger.warning(f"上传视频到 MinIO 失败: {upload_error}")
                 else:
                     # 任务失败
                     task.status = -1  # -1-失败
                     task.result_message = "视频生成失败"
-                #task.updated_at = utils.get_current_time()
+                task.updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 session.commit()
                 logger.info(f"任务 {db_task_id} 完成，状态: {task.status}")
     

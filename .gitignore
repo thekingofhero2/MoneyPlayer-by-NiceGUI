@@ -213,3 +213,5 @@ src/storage/tasks/
 
 src/config.toml
 test.db
+src/storage/
+storage/
