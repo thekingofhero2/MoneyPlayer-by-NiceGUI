@@ -1,4 +1,4 @@
-# MoneyPrinter by NiceGUI
+# MoneyPlayer by NiceGUI
 
 基于 FastAPI + NiceGUI 的全自动视频生成应用。
 
@@ -21,6 +21,14 @@
   如需了解视频制作的核心算法和逻辑，请参考 MoneyPrinterTurbo 项目。
 
 ## 功能特性
+
+### 核心优化
+
+本项目在 MoneyPrinterTurbo 基础上进行了以下核心优化：
+
+- **本地缓存目录结构优化**：重新设计缓存目录结构，分类更清晰，素材管理与清理更便捷
+- **异步任务优化**：全面升级任务处理机制，支持多任务并行调度，提升视频生成效率
+- **本地向量素材库**：集成 ChromaDB 本地向量数据库，构建本地素材向量索引，大幅减少网络请求，提升素材匹配速度
 
 ### 视频制作 (app_videomaker)
 
@@ -71,13 +79,7 @@ cp .env.template .env
 # 编辑 .env 文件，填入必要的 API 密钥
 ```
 
-3. 启动数据库
-
-```bash
-docker-compose up -d db
-```
-
-4. 安装依赖
+3. 安装依赖
 
 ```bash
 pip install -r requirements.txt
@@ -129,8 +131,7 @@ src/
 | `subtitle_enabled` | 是否启用字幕                        |
 | `bgm_type`         | 背景音乐类型                        |
 
-详细配置请参考 `config.toml` 模板。
 
 ## License
 
-基于 MoneyPrinterTurbo 项目许可。
+基于 MIT 许可。
