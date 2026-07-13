@@ -3,6 +3,7 @@ from typing import Any
 from jose import jwt
 from passlib.context import CryptContext
 from src.core.config import settings
+import hashlib
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -21,12 +22,17 @@ def create_access_token(subject: str | Any, expires_delta: timedelta = None) -> 
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+def get_safe_pwd_bytes(password: str) -> bytes:
+    # 先sha256摘要，输出固定32字节，永远<72
+    return hashlib.sha256(password.encode("utf-8")).digest()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Compares a plain text password with a hashed password to check for a match."""
-    return pwd_context.verify(plain_password, hashed_password)
+    safe_bytes = get_safe_pwd_bytes(plain_password)
+    return pwd_context.verify(safe_bytes, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
     """Computes the bcrypt hash of a plain text password."""
-    return pwd_context.hash(password)
+    safe_bytes = get_safe_pwd_bytes(password)
+    return pwd_context.hash(safe_bytes)
